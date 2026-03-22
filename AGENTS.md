@@ -1,59 +1,56 @@
-# Welcome to Your New Wails3 Project!
+# AGENTS.md
 
-Congratulations on generating your Wails3 application! This README will guide you through the next steps to get your project up and running.
+## Project Shape
 
-## Getting Started
+This is a Wails v3 desktop app: a normal Go program hosts a native WebView, serves the frontend into it, and exposes selected Go functionality to JavaScript through generated bindings. `main.go` currently composes the app, window, service registration, emitted events, and embedded assets.
 
-1. Navigate to your project directory in the terminal.
+The updated Wails docs describe this in v2 terms like `wails.Run`, lifecycle callbacks, and `Bind`. In this repo, the same ideas show up through `application.New(...)`, registered `Services`, manager APIs on `app`, and generated files in `frontend/bindings/`.
 
-2. To run your application in development mode, use the following command:
+## Core Concepts
 
-   ```
-   wails3 dev
-   ```
+### Manager API
 
-   This will start your application and enable hot-reloading for both frontend and backend changes.
+- Prefer the organized managers on `app` such as `app.Window`, `app.Event`, `app.Dialog`, `app.Menu`, `app.Browser`, and `app.Env`.
+- Use managers for native app concerns and keep business logic in services.
+- This repo already uses the manager style in `main.go` via `app.Window.NewWithOptions(...)` and `app.Event.Emit(...)`.
 
-3. To build your application for production, use:
+### Lifecycle
 
-   ```
-   wails3 build
-   ```
+- Treat services as the lifecycle unit. Put databases, config loaders, timers, and background workers in services with `ServiceStartup(ctx, options)` and `ServiceShutdown()`.
+- Services start in registration order and shut down in reverse order. If `ServiceStartup` returns an error, app startup aborts cleanly.
+- Use `ShouldQuit` for quit confirmation and `OnShutdown` for light app-level cleanup, not for long-lived resource management.
+- Any goroutine that survives beyond a single call should respect `ctx.Done()` or have explicit cancellation.
 
-   This will create a production-ready executable in the `build` directory.
+### Go-Frontend Bridge
 
-## Exploring Wails3 Features
+- Exported methods on registered services are scanned and turned into generated TypeScript bindings in `frontend/bindings/`, so they can be called from the frontend like local async functions.
+- Change Go service APIs first and never hand-edit generated bindings.
+- Keep bridge APIs simple and typed: primitives, slices, maps, structs, and `error` work well.
+- Struct fields need usable JSON shapes to translate cleanly to TypeScript. Avoid anonymous nested structs and bridge-unfriendly types such as channels, funcs, file handles, or opaque interfaces.
+- Batch related work when possible. Use events for progress or streaming instead of polling or returning huge payloads.
 
-Now that you have your project set up, it's time to explore the features that Wails3 offers:
+### Build System
 
-1. **Check out the examples**: The best way to learn is by example. Visit the `examples` directory in the `v3/examples` directory to see various sample applications.
+- Wails build flow is: analyze Go services -> generate bindings -> build frontend -> compile Go -> embed `frontend/dist`.
+- In development, assets are served from disk with live reload. In production, `frontend/dist` is embedded into the binary and no external frontend files are shipped.
+- Use `task dev` for normal development. In this repo it runs `wails3 dev` through `build/config.yml` and the Taskfile-managed Vite port.
+- Use `task build` for release-style validation: production frontend build, optimized Go binary, embedded assets.
+- If you change service signatures, startup wiring, or asset loading, run a full build before finishing.
+- Keep `frontend/dist` lean and make sure it still contains `index.html`, because embedded assets directly affect both startup and binary size.
 
-2. **Run an example**: To run any of the examples, navigate to the example's directory and use:
+## Repo Map
 
-   ```
-   go run .
-   ```
+- `main.go`: app bootstrap, manager usage, window config, service registration, event emission, embedded asset wiring
+- `greetservice.go`: example Go service exposed to the frontend
+- `frontend/src`: Vue application source
+- `frontend/bindings`: auto-generated Wails bridge code; treat as generated output
+- `Taskfile.yml`: preferred project commands
+- `build/config.yml`: Wails dev/build orchestration
 
-   Note: Some examples may be under development during the alpha phase.
+## Working Notes
 
-3. **Explore the documentation**: Visit the [Wails3 documentation](https://v3.wails.io/) for in-depth guides and API references.
-
-4. **Join the community**: Have questions or want to share your progress? Join the [Wails Discord](https://discord.gg/JDdSxwjhGf) or visit the [Wails discussions on GitHub](https://github.com/wailsapp/wails/discussions).
-
-## Project Structure
-
-Take a moment to familiarize yourself with your project structure:
-
-- `frontend/`: Contains your frontend code (HTML, CSS, JavaScript/TypeScript)
-- `main.go`: The entry point of your Go backend
-- `app.go`: Define your application structure and methods here
-- `wails.json`: Configuration file for your Wails project
-
-## Next Steps
-
-1. Modify the frontend in the `frontend/` directory to create your desired UI.
-2. Add backend functionality in `main.go`.
-3. Use `wails3 dev` to see your changes in real-time.
-4. When ready, build your application with `wails3 build`.
-
-Happy coding with Wails3! If you encounter any issues or have questions, don't hesitate to consult the documentation or reach out to the Wails community.
+- Use `task dev` for day-to-day development.
+- Use `task build` before finishing changes that affect startup, bindings, or assets.
+- If you add or rename service methods, confirm the frontend bindings still regenerate cleanly through the normal Wails dev/build flow.
+- Keep backend/frontend changes aligned: service API changes usually require matching TypeScript updates.
+- Prefer moving persistent timers or workers out of `main.go` and into services so shutdown is coordinated by context.
