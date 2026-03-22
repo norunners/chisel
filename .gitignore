@@ -1,5 +1,6 @@
-.task
+.task/
 bin/
-build/
 frontend/dist/
 frontend/node_modules/
+
+.DS_Store
