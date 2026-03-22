@@ -1,4 +1,4 @@
-module changeme
+module github.com/norunners/chisel
 
 go 1.25
 
