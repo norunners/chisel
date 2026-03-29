@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const colorMode = useColorMode()
 
-const color = computed(() => colorMode.value === 'dark' ? '#1b1718' : 'white')
+const color = computed(() => colorMode.value === 'dark' ? '#111827' : '#ffffff')
 
 useHead({
   meta: [
@@ -17,17 +17,12 @@ useHead({
   }
 })
 
-const title = 'Chisel Chat'
-const description = 'A Nuxt UI chat experience adapted for a Wails desktop shell.'
+const title = 'Chisel'
+const description = 'An ACP-first desktop and browser client for coding agents.'
 
 useSeoMeta({
   title,
-  description,
-  ogTitle: title,
-  ogDescription: description,
-  ogImage: 'https://ui.nuxt.com/assets/templates/nuxt/chat-light.png',
-  twitterImage: 'https://ui.nuxt.com/assets/templates/nuxt/chat-light.png',
-  twitterCard: 'summary_large_image'
+  description
 })
 </script>
 

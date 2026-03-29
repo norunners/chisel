@@ -2,5 +2,6 @@
 bin/
 frontend/dist/
 frontend/node_modules/
+.pnpm-store/
 
 .DS_Store

@@ -12,4 +12,3 @@ if (!fs.existsSync(publicDir)) {
 fs.rmSync(distDir, { recursive: true, force: true })
 fs.mkdirSync(distDir, { recursive: true })
 fs.cpSync(publicDir, distDir, { recursive: true })
-

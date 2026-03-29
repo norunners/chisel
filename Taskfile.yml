@@ -44,10 +44,20 @@ tasks:
     cmds:
       - task: common:build:server
 
+  build:web:
+    summary: Builds the browser/server variant of the application
+    cmds:
+      - task: build:server
+
   run:server:
     summary: Runs the application in server mode
     cmds:
       - task: common:run:server
+
+  run:web:
+    summary: Runs the browser/server variant of the application
+    cmds:
+      - task: run:server
 
   build:docker:
     summary: Builds a Docker image for server mode deployment
